@@ -112,7 +112,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: android-app
-          path: ${{ env.APK_PATH }}
+          path: ./build/app/outputs/flutter-apk/app-release.apk
 
 #      - name: Upload DMG
 #        uses: actions/upload-artifact@v2
