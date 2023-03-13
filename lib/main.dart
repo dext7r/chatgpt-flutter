@@ -250,7 +250,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (!currentFocus.hasPrimaryFocus) {
                       currentFocus.unfocus();
                     }
-                    _handleSubmit(_controller.text);
+                    if(_controller.text.length>0 ){
+                      _handleSubmit(_controller.text);
+                    }
                   },
                 ),
                 IconButton(
