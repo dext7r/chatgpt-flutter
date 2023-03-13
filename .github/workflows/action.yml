@@ -84,13 +84,13 @@ jobs:
       - name: Set APK_PATH
         run: echo "APK_PATH=build/app/outputs/flutter-apk/app-release.apk"` >> $GITHUB_ENV
 
-      - name: Build DMG
-        run: flutter build macos --release --no-codesign
-        env:
-          DMG_PATH: build/macos/Build/Products/Release/Runner.dmg
-
-      - name: Set DMG_PATH
-        run: echo "DMG_PATH=build/macos/Build/Products/Release/Runner.dmg" >> $GITHUB_ENV
+#      - name: Build DMG
+#        run: flutter build macos --release --no-codesign
+#        env:
+#          DMG_PATH: build/macos/Build/Products/Release/Runner.dmg
+#
+#      - name: Set DMG_PATH
+#        run: echo "DMG_PATH=build/macos/Build/Products/Release/Runner.dmg" >> $GITHUB_ENV
 
       - name: Build PKG
         run: |
@@ -114,11 +114,11 @@ jobs:
           name: android-app
           path: ${{ env.APK_PATH }}
 
-      - name: Upload DMG
-        uses: actions/upload-artifact@v2
-        with:
-          name: macos-app
-          path: ${{ env.DMG_PATH }}
+#      - name: Upload DMG
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: macos-app
+#          path: ${{ env.DMG_PATH }}
 
       - name: Upload PKG
         uses: actions/upload-artifact@v2
