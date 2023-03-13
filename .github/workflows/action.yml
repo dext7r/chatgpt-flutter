@@ -105,7 +105,7 @@ jobs:
           architecture: x64
 
       - name: Build Web App
-        run: flutter build web --release --web-renderer=auto --no-sound-null-safety
+        run: flutter build web --release --web-renderer=html --no-sound-null-safety
         env:
           WEB_PATH: build/web/
 
