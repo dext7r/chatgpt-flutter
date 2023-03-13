@@ -92,15 +92,15 @@ jobs:
 #      - name: Set DMG_PATH
 #        run: echo "DMG_PATH=build/macos/Build/Products/Release/Runner.dmg" >> $GITHUB_ENV
 
-      - name: Build PKG
-        run: |
-          flutter build macos --release --no-codesign --build-number=$GITHUB_RUN_NUMBER
-          flutter build macos --release --no-codesign --build-number=$GITHUB_RUN_NUMBER --create-app-bundle
-        env:
-          PKG_PATH: build/macos/Build/Products/Release/bundle/Runner-$GITHUB_RUN_NUMBER.pkg
-
-      - name: Set PKG_PATH
-        run: echo "PKG_PATH=build/macos/Build/Products/Release/bundle/Runner-$GITHUB_RUN_NUMBER.pkg" >> $GITHUB_ENV
+#      - name: Build PKG
+#        run: |
+#          flutter build macos --release --no-codesign --build-number=$GITHUB_RUN_NUMBER
+#          flutter build macos --release --no-codesign --build-number=$GITHUB_RUN_NUMBER --create-app-bundle
+#        env:
+#          PKG_PATH: build/macos/Build/Products/Release/bundle/Runner-$GITHUB_RUN_NUMBER.pkg
+#
+#      - name: Set PKG_PATH
+#        run: echo "PKG_PATH=build/macos/Build/Products/Release/bundle/Runner-$GITHUB_RUN_NUMBER.pkg" >> $GITHUB_ENV
 
       - name: Upload App
         uses: actions/upload-artifact@v3
@@ -120,11 +120,11 @@ jobs:
 #          name: macos-app
 #          path: ${{ env.DMG_PATH }}
 
-      - name: Upload PKG
-        uses: actions/upload-artifact@v2
-        with:
-          name: macos-app
-          path: ${{ env.PKG_PATH }}
+#      - name: Upload PKG
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: macos-app
+#          path: ${{ env.PKG_PATH }}
 
   build-and-release-ubuntu:
     runs-on: ubuntu-latest
