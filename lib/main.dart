@@ -14,10 +14,7 @@ void main() async {
 class ChatApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        title: 'chatGpt',
-        home: ChatScreen()
-    );
+    return MaterialApp(title: 'chatGpt', home: ChatScreen());
   }
 }
 
@@ -75,14 +72,15 @@ class _ChatScreenState extends State<ChatScreen> {
               itemBuilder: (BuildContext context, int index) {
                 final bool isUserMessage = _messages[index]['author'] ==
                     'user'; // check whether the message is sent by the user
-
                 return ListTile(
-                  title: Markdown(
+                  title: MarkdownBody(
                     data: _messages[index]['content'] ?? '',
-                    physics: new NeverScrollableScrollPhysics(),
-                    // disable scroll
-                    shrinkWrap: true,
-                    // markdown does not show
+                    selectable: true,
+                    styleSheet: MarkdownStyleSheet(
+                      p: TextStyle(
+                        color: _messages[index]['color'] ?? Colors.black,
+                      ),
+                    ),
                   ),
                   subtitle: Text(
                     DateFormat.yMd().add_jm().format(
@@ -201,14 +199,25 @@ class _ChatScreenState extends State<ChatScreen> {
       body: json.encode(data),
     );
     var utf8Response = utf8.decode(response.bodyBytes);
-    var reply = json.decode(utf8Response)['choices'][0]['message']['content'];
+    var jsonResponse = json.decode(utf8Response);
+    var reply = '';
+    var replyColor = Colors.black;
+    if (jsonResponse.containsKey('error')) {
+      var errorMessage = jsonResponse['error']['message'];
+      reply = 'Error: $errorMessage'; // error message
+      replyColor = Colors.red;
+    } else {
+      reply = jsonResponse['choices'][0]['message']['content'];
+    }
+
     setState(() {
       _messages.insert(
         0,
         {
           'author': 'Bot', // message author: ChatGpt Bot
           'content': reply, // message content: Gpt3 response to user message
-          'timestamp': '${DateTime.now().toUtc()}'
+          'timestamp': '${DateTime.now().toUtc()}', // message timestamp
+          'color': replyColor, // message color: red if error, black otherwise
         },
       );
     });
