@@ -15,8 +15,8 @@ class ChatApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'chatGpt',
-      home: ChatScreen(),
+        title: 'chatGpt',
+        home: ChatScreen()
     );
   }
 }
@@ -46,15 +46,16 @@ class Message {
   }
 
   Map<String, dynamic> toJson() => {
-    'author': author,
-    'content': content,
-    'timestamp': timestamp.toIso8601String(),
-  };
+        'author': author,
+        'content': content,
+        'timestamp': timestamp.toIso8601String(),
+      };
 }
 
 class _ChatScreenState extends State<ChatScreen> {
   List<Map<String, dynamic>> _messages = []; // list of messages
-  final _controller = TextEditingController(); // text controller to input messages
+  final _controller =
+      TextEditingController(); // text controller to input messages
   final String _apiKey = dotenv.env['API_KEY']!; // API key
   final String _model = "gpt-3.5-turbo-0301"; // GPT model
   bool _isCopied = false; // whether the message has been copied to clipboard
@@ -72,27 +73,29 @@ class _ChatScreenState extends State<ChatScreen> {
               reverse: true,
               itemCount: _messages.length,
               itemBuilder: (BuildContext context, int index) {
-                final bool isUserMessage =
-                    _messages[index]['author'] == 'user'; // check whether the message is sent by the user
+                final bool isUserMessage = _messages[index]['author'] ==
+                    'user'; // check whether the message is sent by the user
 
                 return ListTile(
                   title: Markdown(
-                      data: _messages[index]['content'] ?? '',
-                      physics: new NeverScrollableScrollPhysics(), // disable scroll
-                      shrinkWrap: true  // markdown does not show
+                    data: _messages[index]['content'] ?? '',
+                    physics: new NeverScrollableScrollPhysics(),
+                    // disable scroll
+                    shrinkWrap: true,
+                    // markdown does not show
                   ),
                   subtitle: Text(
                     DateFormat.yMd().add_jm().format(
-                      DateTime.parse(_messages[index]['timestamp'] ?? ''),
-                    ),
+                          DateTime.parse(_messages[index]['timestamp'] ?? ''),
+                        ),
                   ),
                   leading: isUserMessage
                       ? CircleAvatar(
-                    child: Icon(Icons.person, color: Colors.white),
-                  )
+                          child: Icon(Icons.person, color: Colors.white),
+                        )
                       : CircleAvatar(
-                    child: Icon(Icons.android, color: Colors.green),
-                  ),
+                          child: Icon(Icons.android, color: Colors.green),
+                        ),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 16.0,
                     vertical: 8.0,
@@ -101,28 +104,26 @@ class _ChatScreenState extends State<ChatScreen> {
                   dense: false,
                   trailing: !isUserMessage
                       ? InkWell(
-                    onTap: () => _copyToClipboard(
-                        _messages[index]['content']),
-                    onLongPress: () => setState(() {
-                      _isCopied = true;
-                      _copyToClipboard(
-                          _messages[index]['content']);
-                    }),
-                    onTapCancel: () => setState(() {
-                      _isCopied = false;
-                    }),
-                    child: Container(
-                      padding: EdgeInsets.all(4.0),
-                      decoration: BoxDecoration(
-                        color: _isCopied
-                            ? Colors.blueGrey.shade300
-                            : Colors.transparent,
-                        borderRadius:
-                        BorderRadius.circular(12.0),
-                      ),
-                      child: Icon(Icons.content_copy),
-                    ),
-                  )
+                          onTap: () =>
+                              _copyToClipboard(_messages[index]['content']),
+                          onLongPress: () => setState(() {
+                            _isCopied = true;
+                            _copyToClipboard(_messages[index]['content']);
+                          }),
+                          onTapCancel: () => setState(() {
+                            _isCopied = false;
+                          }),
+                          child: Container(
+                            padding: EdgeInsets.all(4.0),
+                            decoration: BoxDecoration(
+                              color: _isCopied
+                                  ? Colors.blueGrey.shade300
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            child: Icon(Icons.content_copy),
+                          ),
+                        )
                       : null,
                 );
               },
@@ -185,7 +186,9 @@ class _ChatScreenState extends State<ChatScreen> {
       'model': _model,
       'temperature': 0.6,
       'stream': false,
-      'messages': [        {'role': 'user', 'content': content}      ]
+      'messages': [
+        {'role': 'user', 'content': content}
+      ]
     };
 
     var headers = {
@@ -197,8 +200,8 @@ class _ChatScreenState extends State<ChatScreen> {
       headers: headers,
       body: json.encode(data),
     );
-    var reply =
-    json.decode(response.body)['choices'][0]['message']['content'];
+    var utf8Response = utf8.decode(response.bodyBytes);
+    var reply = json.decode(utf8Response)['choices'][0]['message']['content'];
     setState(() {
       _messages.insert(
         0,
@@ -214,9 +217,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _copyToClipboard(String text) async {
     await Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Copied to clipboard')),
-    ).closed.then((reason) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+          SnackBar(content: Text('Copied to clipboard')),
+        )
+        .closed
+        .then((reason) {
       Future.delayed(Duration(milliseconds: 500), () {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
       });
