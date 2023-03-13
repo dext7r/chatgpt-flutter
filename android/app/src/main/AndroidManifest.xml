@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.chatgpt-flutter">
+    package="com.example.chatgpt_flutter">
    <application
-        android:label="chatgpt-flutter"
+        android:label="chatgpt_flutter"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

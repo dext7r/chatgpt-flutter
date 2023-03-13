@@ -112,9 +112,8 @@ class _PromptsListState extends State<PromptsList> {
           'title': line.substring(3),
           'questions': '',
         };
-      }
-      else if (line.length > 4) {
-        prompt['questions'] += line.substring(4) + '\n';
+      } else if (line.length > 4) {
+        prompt['questions'] += line + '\n';
       }
     }
     prompts.add(prompt);
@@ -152,6 +151,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final String _apiKey = dotenv.env['API_KEY']!; // API key
   final String _model = "gpt-3.5-turbo-0301"; // GPT model
   bool _isCopied = false; // whether the message has been copied to clipboard
+  bool _isLoading = false; // whether the app is loading
 
   @override
   Widget build(BuildContext context) {
@@ -237,8 +237,14 @@ class _ChatScreenState extends State<ChatScreen> {
                       maxLines: null,
                       controller: _controller,
                       onFieldSubmitted: _handleSubmit,
-                      decoration: InputDecoration.collapsed(
+                      style: TextStyle(fontSize: 16),
+                      textAlignVertical: TextAlignVertical.center,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 10),
                         hintText: 'Send a message',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                       ),
                     ),
                   ),
@@ -250,7 +256,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     if (!currentFocus.hasPrimaryFocus) {
                       currentFocus.unfocus();
                     }
-                    if(_controller.text.length>0 ){
+                    if (_controller.text.length > 0) {
                       _handleSubmit(_controller.text);
                     }
                   },
@@ -272,7 +278,14 @@ class _ChatScreenState extends State<ChatScreen> {
                       _controller.text = selectedPrompt['questions'];
                     }
                   },
+                ),
+                _isLoading // if loading is true, show CircularProgressIndicator
+                    ? Container(
+                  alignment: Alignment.center,
+                  color: Colors.white70,
+                  child: CircularProgressIndicator(),
                 )
+                    : SizedBox.shrink(),
               ],
             ),
           ),
@@ -282,6 +295,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _handleSubmit(String text) async {
+    setState(() {
+      _isLoading = true; // set loading to true
+    });
     _controller.clear();
     final author = 'user';
     final content = text;
@@ -294,6 +310,7 @@ class _ChatScreenState extends State<ChatScreen> {
           'timestamp': '${DateTime.now().toUtc()}',
         },
       );
+      _isLoading = false; // set loading to false
     });
 
     var data = {
@@ -337,7 +354,6 @@ class _ChatScreenState extends State<ChatScreen> {
         },
       );
     });
-    await _copyToClipboard(reply);
   }
 
   Future<void> _copyToClipboard(String text) async {
