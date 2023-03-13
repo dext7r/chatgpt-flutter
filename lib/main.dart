@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -49,6 +50,101 @@ class Message {
       };
 }
 
+class MarkdownDemo extends StatefulWidget {
+  @override
+  _MarkdownDemoState createState() => _MarkdownDemoState();
+}
+
+class _MarkdownDemoState extends State<MarkdownDemo> {
+  String _markdownData = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMarkdownData();
+  }
+
+  Future<void> _loadMarkdownData() async {
+    final String data = await rootBundle.loadString('prompts.md');
+    setState(() {
+      _markdownData = data;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Markdown Demo'),
+      ),
+      body: _markdownData.isNotEmpty
+          ? Markdown(data: _markdownData)
+          : Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class PromptsList extends StatefulWidget {
+  @override
+  _PromptsListState createState() => _PromptsListState();
+}
+
+class _PromptsListState extends State<PromptsList> {
+  final List<Map<String, dynamic>> _prompts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrompts();
+  }
+
+  Future<void> _loadPrompts() async {
+    final String data = await rootBundle.loadString('prompts.md');
+    final List<String> lines = data.split('\n');
+    final List<Map<String, dynamic>> prompts = [];
+    Map<String, dynamic> prompt = {};
+
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i];
+      if (line.startsWith('## ')) {
+        if (prompt.isNotEmpty) prompts.add(prompt);
+        prompt = {
+          'title': line.substring(3),
+          'questions': '',
+        };
+      }
+      else if (line.length > 4) {
+        prompt['questions'] += line.substring(4) + '\n';
+      }
+    }
+    prompts.add(prompt);
+    setState(() {
+      _prompts.addAll(prompts);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Prompts'),
+      ),
+      body: ListView.builder(
+        itemCount: _prompts.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text('${index + 1}. ${_prompts[index]['title']}'),
+            subtitle: Text(_prompts[index]['questions']),
+            onTap: () {
+              Navigator.pop(context, _prompts[index]);
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _ChatScreenState extends State<ChatScreen> {
   List<Map<String, dynamic>> _messages = []; // list of messages
   final _controller =
@@ -70,8 +166,7 @@ class _ChatScreenState extends State<ChatScreen> {
               reverse: true,
               itemCount: _messages.length,
               itemBuilder: (BuildContext context, int index) {
-                final bool isUserMessage = _messages[index]['author'] ==
-                    'user'; // check whether the message is sent by the user
+                final bool isUserMessage = _messages[index]['author'] == 'user';
                 return ListTile(
                   title: MarkdownBody(
                     data: _messages[index]['content'] ?? '',
@@ -137,10 +232,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: TextField(
+                    child: TextFormField(
                       autofocus: false,
+                      maxLines: null,
                       controller: _controller,
-                      onSubmitted: _handleSubmit,
+                      onFieldSubmitted: _handleSubmit,
                       decoration: InputDecoration.collapsed(
                         hintText: 'Send a message',
                       ),
@@ -157,6 +253,24 @@ class _ChatScreenState extends State<ChatScreen> {
                     _handleSubmit(_controller.text);
                   },
                 ),
+                IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    _controller.clear();
+                  },
+                ),
+                IconButton(
+                  icon: Icon(Icons.settings),
+                  onPressed: () async {
+                    final selectedPrompt = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => PromptsList()),
+                    );
+                    if (selectedPrompt != null) {
+                      _controller.text = selectedPrompt['questions'];
+                    }
+                  },
+                )
               ],
             ),
           ),
@@ -167,15 +281,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _handleSubmit(String text) async {
     _controller.clear();
-    final author = 'user'; // message author: user
-    final content = text; // message content
+    final author = 'user';
+    final content = text;
     setState(() {
       _messages.insert(
         0,
         {
           'author': author,
           'content': content,
-          'timestamp': '${DateTime.now().toUtc()}'
+          'timestamp': '${DateTime.now().toUtc()}',
         },
       );
     });
@@ -191,7 +305,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     var headers = {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $_apiKey'
+      'Authorization': 'Bearer $_apiKey',
     };
     var response = await http.post(
       Uri.parse('https://chatgpt-proxy.h7ml.cn/proxy/v1/chat/completions'),
@@ -204,7 +318,7 @@ class _ChatScreenState extends State<ChatScreen> {
     var replyColor = Colors.black;
     if (jsonResponse.containsKey('error')) {
       var errorMessage = jsonResponse['error']['message'];
-      reply = 'Error: $errorMessage'; // error message
+      reply = 'Error: $errorMessage';
       replyColor = Colors.red;
     } else {
       reply = jsonResponse['choices'][0]['message']['content'];
