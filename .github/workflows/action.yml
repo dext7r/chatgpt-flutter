@@ -38,27 +38,14 @@ jobs:
         env:
           APP_PATH: build/ios/iphoneos/Runner.app
 
-      - name: Zip App
-        run: zip -r app.zip $APP_PATH
-
       - name: Set APP_PATH
         run: echo "APP_PATH=app.zip" >> $GITHUB_ENV
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@master
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          github-token: ${{ secrets.PERSONAL_TOKEN }}
-          vercel-args: '--prod'
-          vercel-org-id: ${{ secrets.ORG_ID }}
-          vercel-project-id: ${{ secrets.PROJECT_ID }}
-          working-directory: $APP_PATH
 
       - name: Upload App
         uses: actions/upload-artifact@v3
         with:
           name: macos-app
-          path: ${{ env.APP_PATH }}
+          path: ./build/ios/iphoneos/Runner.app
 
   build-and-release-windows:
     runs-on: windows-latest
@@ -93,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: windows-app
-          path: ${{ env.APP_PATH }}
+          path: ./build/windows/runner/Release/runner.exe
 
   build-and-release-ubuntu:
     runs-on: ubuntu-latest
