@@ -76,55 +76,11 @@ jobs:
       - name: Set APP_PATH
         run: echo "APP_PATH=build/windows/runner/Release/runner.exe" >> $GITHUB_ENV
 
-      - name: Build APK
-        run: flutter build apk --release --no-sound-null-safety
-        env:
-          APK_PATH: build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Set APK_PATH
-        run: echo "APK_PATH=build/app/outputs/flutter-apk/app-release.apk"` >> $GITHUB_ENV
-
-      - name: Build DMG
-        run: flutter build macos --release --no-codesign
-        env:
-          DMG_PATH: build/macos/Build/Products/Release/Runner.dmg
-
-      - name: Set DMG_PATH
-        run: echo "DMG_PATH=build/macos/Build/Products/Release/Runner.dmg" >> $GITHUB_ENV
-
-      - name: Build PKG
-        run: |
-          flutter build macos --release --no-codesign --build-number=$GITHUB_RUN_NUMBER
-          flutter build macos --release --no-codesign --build-number=$GITHUB_RUN_NUMBER --create-app-bundle
-        env:
-          PKG_PATH: build/macos/Build/Products/Release/bundle/Runner-$GITHUB_RUN_NUMBER.pkg
-
-      - name: Set PKG_PATH
-        run: echo "PKG_PATH=build/macos/Build/Products/Release/bundle/Runner-$GITHUB_RUN_NUMBER.pkg" >> $GITHUB_ENV
-
       - name: Upload App
         uses: actions/upload-artifact@v3
         with:
           name: windows-app
           path: ./build/windows/runner/Release/runner.exe
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v2
-        with:
-          name: android-app
-          path: ${{ env.APK_PATH }}
-
-      - name: Upload DMG
-        uses: actions/upload-artifact@v2
-        with:
-          name: macos-app
-          path: ${{ env.DMG_PATH }}
-
-      - name: Upload PKG
-        uses: actions/upload-artifact@v2
-        with:
-          name: macos-app
-          path: ${{ env.PKG_PATH }}
 
   build-and-release-ubuntu:
     runs-on: ubuntu-latest
