@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'components/chat_app.dart';
 import 'components/prompts_list.dart';
+import 'components/markdown_demo.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => ChatApp(),
-        // '/markdown': (context) => MarkdownDemo(),
+        '/markdown': (context) => MarkdownDemo(),
         '/prompts': (context) => PromptsList(),
       },
     );
