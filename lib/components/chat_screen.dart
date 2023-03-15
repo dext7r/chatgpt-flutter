@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'prompts_list.dart';
 
@@ -34,16 +34,16 @@ class Message {
   }
 
   Map<String, dynamic> toJson() => {
-    'author': author,
-    'content': content,
-    'timestamp': timestamp.toIso8601String(),
-  };
+        'author': author,
+        'content': content,
+        'timestamp': timestamp.toIso8601String(),
+      };
 }
 
 class _ChatScreenState extends State<ChatScreen> {
   List<Map<String, dynamic>> _messages = []; // list of messages
   final _controller =
-  TextEditingController(); // text controller to input messages
+      TextEditingController(); // text controller to input messages
   final String _apiKey = dotenv.env['API_KEY']!; // API key
   final String _model = "gpt-3.5-turbo-0301"; // GPT model
   bool _isCopied = false; // whether the message has been copied to clipboard
@@ -54,6 +54,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _textEditingController.addListener(_updateFloatingActionButtonVisibility);
+    _loadMessages();
   }
 
   @override
@@ -66,6 +67,17 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _updateFloatingActionButtonVisibility() {
     setState(() {});
+  }
+
+  Future<void> _loadMessages() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> loadedMessages = prefs.getStringList('messages') ?? [];
+    setState(() {
+      _messages = loadedMessages
+          .map((message) => json.decode(message))
+          .cast<Map<String, dynamic>>()
+          .toList();
+    });
   }
 
   @override
@@ -88,22 +100,22 @@ class _ChatScreenState extends State<ChatScreen> {
                     selectable: true,
                     styleSheet: MarkdownStyleSheet(
                       p: TextStyle(
-                        color: _messages[index]['color'] ?? Colors.black,
+                        color: Colors.black,
                       ),
                     ),
                   ),
                   subtitle: Text(
                     DateFormat.yMd().add_jm().format(
-                      DateTime.parse(_messages[index]['timestamp'] ?? ''),
-                    ),
+                          DateTime.parse(_messages[index]['timestamp'] ?? ''),
+                        ),
                   ),
                   leading: isUserMessage
                       ? CircleAvatar(
-                    child: Icon(Icons.person, color: Colors.white),
-                  )
+                          child: Icon(Icons.person, color: Colors.white),
+                        )
                       : CircleAvatar(
-                    child: Icon(Icons.android, color: Colors.green),
-                  ),
+                          child: Icon(Icons.android, color: Colors.green),
+                        ),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 16.0,
                     vertical: 8.0,
@@ -112,26 +124,26 @@ class _ChatScreenState extends State<ChatScreen> {
                   dense: false,
                   trailing: !isUserMessage
                       ? InkWell(
-                    onTap: () =>
-                        _copyToClipboard(_messages[index]['content']),
-                    onLongPress: () => setState(() {
-                      _isCopied = true;
-                      _copyToClipboard(_messages[index]['content']);
-                    }),
-                    onTapCancel: () => setState(() {
-                      _isCopied = false;
-                    }),
-                    child: Container(
-                      padding: EdgeInsets.all(4.0),
-                      decoration: BoxDecoration(
-                        color: _isCopied
-                            ? Colors.blueGrey.shade300
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: Icon(Icons.content_copy),
-                    ),
-                  )
+                          onTap: () =>
+                              _copyToClipboard(_messages[index]['content']),
+                          onLongPress: () => setState(() {
+                            _isCopied = true;
+                            _copyToClipboard(_messages[index]['content']);
+                          }),
+                          onTapCancel: () => setState(() {
+                            _isCopied = false;
+                          }),
+                          child: Container(
+                            padding: EdgeInsets.all(4.0),
+                            decoration: BoxDecoration(
+                              color: _isCopied
+                                  ? Colors.blueGrey.shade300
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            child: Icon(Icons.content_copy),
+                          ),
+                        )
                       : null,
                 );
               },
@@ -200,7 +212,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                   },
                 ),
-                if (_messages.isNotEmpty || _textEditingController.text.isNotEmpty)
+                if (_messages.isNotEmpty ||
+                    _textEditingController.text.isNotEmpty)
                   Positioned(
                     bottom: 0,
                     left: 30.0,
@@ -223,6 +236,31 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: BottomAppBar(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: Icon(Icons.home),
+              onPressed: () {
+                Navigator.of(context).pushNamed('/');
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.person),
+              onPressed: () {
+                Navigator.of(context).pushNamed('/profile');
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.settings),
+              onPressed: () {
+                Navigator.of(context).pushNamed('/settings');
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -233,6 +271,18 @@ class _ChatScreenState extends State<ChatScreen> {
     _controller.clear();
     final author = 'user';
     final content = text;
+    final timestamp = DateTime.now().toUtc();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> newMessages = prefs.getStringList('messages') ?? [];
+    newMessages.insert(
+        0,
+        json.encode({
+          'author': author,
+          'content': content,
+          'timestamp': timestamp.toIso8601String(),
+        }));
+    await prefs.setStringList('messages', newMessages);
+
     setState(() {
       _messages.insert(
         0,
@@ -243,6 +293,11 @@ class _ChatScreenState extends State<ChatScreen> {
         },
       );
       _isLoading = false; // set loading to false
+
+      if (_messages.isEmpty && _textEditingController.text.isEmpty) {
+        SharedPreferences.getInstance()
+            .then((prefs) => prefs.remove('messages')); // 删除本地存储的所有消息
+      }
     });
 
     var data = {
@@ -263,6 +318,9 @@ class _ChatScreenState extends State<ChatScreen> {
       headers: headers,
       body: json.encode(data),
     );
+    setState(() {
+      _isLoading = false; // 将 _isLoading 的值改回来
+    });
     var utf8Response = utf8.decode(response.bodyBytes);
     var jsonResponse = json.decode(utf8Response);
     var reply = '';
@@ -274,6 +332,22 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       reply = jsonResponse['choices'][0]['message']['content'];
     }
+
+    SharedPreferences messageprefs = await SharedPreferences.getInstance();
+    List<String> messages = prefs.getStringList('messages') ?? [];
+    messages.insert(
+        0,
+        json.encode({
+          'author': 'Bot',
+          // message author: ChatGpt Bot
+          'content': reply,
+          // message content: Gpt3 response to user message
+          'timestamp': '${DateTime.now().toUtc()}',
+          // message timestamp
+          'color': replyColor.value.toString(),
+          // message color: red if error, black otherwise
+        }));
+    await messageprefs.setStringList('messages', messages);
 
     setState(() {
       _messages.insert(
@@ -292,8 +366,8 @@ class _ChatScreenState extends State<ChatScreen> {
     await Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context)
         .showSnackBar(
-      SnackBar(content: Text('Copied to clipboard')),
-    )
+          SnackBar(content: Text('Copied to clipboard')),
+        )
         .closed
         .then((reason) {
       Future.delayed(Duration(milliseconds: 500), () {
